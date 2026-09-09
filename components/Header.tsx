@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const conditions = [
   { label: "Spinal Stenosis", href: "/conditions/spinal-stenosis" },
@@ -33,8 +33,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const scrollPosition = useRef(0);
-
+  // Header styling after scrolling.
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 24);
@@ -42,68 +41,31 @@ export default function Header() {
 
     handleScroll();
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
-  /*
-    Robust mobile scroll locking, including iOS Safari.
-    The page is fixed in place while the menu is open.
-  */
+  // Lock background scrolling while the mobile menu is open.
   useEffect(() => {
-    if (!mobileOpen) return;
-
-    scrollPosition.current = window.scrollY;
-
-    const body = document.body;
     const html = document.documentElement;
+    const body = document.body;
 
-useEffect(() => {
-  if (!mobileOpen) return;
-
-  const body = document.body;
-
-  body.style.overflow = "hidden";
-
-  const preventBackgroundScroll = (event: TouchEvent) => {
-    const target = event.target as HTMLElement;
-
-    // Allow scrolling inside the actual mobile menu
-    if (target.closest(".mobile-menu")) {
-      return;
+    if (mobileOpen) {
+      html.classList.add("nav-open");
+      body.classList.add("nav-open");
+    } else {
+      html.classList.remove("nav-open");
+      body.classList.remove("nav-open");
     }
 
-    event.preventDefault();
-  };
-
-  document.addEventListener("touchmove", preventBackgroundScroll, {
-    passive: false,
-  });
-
-  return () => {
-    body.style.overflow = "";
-
-    document.removeEventListener(
-      "touchmove",
-      preventBackgroundScroll
-    );
-  };
-}, [mobileOpen]);
-
     return () => {
-      body.style.position = "";
-      body.style.top = "";
-      body.style.left = "";
-      body.style.right = "";
-      body.style.width = "";
-      body.style.overflow = "";
-
-      html.style.overflow = "";
-
-      window.scrollTo(0, scrollPosition.current);
+      html.classList.remove("nav-open");
+      body.classList.remove("nav-open");
     };
   }, [mobileOpen]);
 
@@ -114,6 +76,7 @@ useEffect(() => {
   return (
     <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
       <div className="nav-shell">
+        {/* Brand */}
         <Link href="/" className="brand" onClick={closeMobileMenu}>
           <div className="brand-mark">
             <span>M</span>
@@ -130,11 +93,13 @@ useEffect(() => {
           </div>
         </Link>
 
+        {/* Desktop navigation */}
         <nav className="desktop-nav" aria-label="Primary navigation">
           <Link href="/about" className="nav-link">
             About
           </Link>
 
+          {/* Conditions */}
           <div className="nav-dropdown">
             <button
               type="button"
@@ -165,6 +130,7 @@ useEffect(() => {
             </div>
           </div>
 
+          {/* Expertise */}
           <div className="nav-dropdown">
             <button
               type="button"
@@ -206,6 +172,7 @@ useEffect(() => {
           </Link>
         </nav>
 
+        {/* Right-side controls */}
         <div className="nav-actions">
           <Link href="/locations" className="appointment-button">
             Request appointment
@@ -225,9 +192,11 @@ useEffect(() => {
         </div>
       </div>
 
+      {/* Mobile / tablet navigation */}
       <div
         id="mobile-navigation"
         className={`mobile-menu ${mobileOpen ? "open" : ""}`}
+        aria-hidden={!mobileOpen}
       >
         <nav
           className="mobile-menu-inner"
