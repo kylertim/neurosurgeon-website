@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const conditions = [
   { label: "Spinal Stenosis", href: "/conditions/spinal-stenosis" },
@@ -33,18 +33,65 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const scrollPosition = useRef(0);
+
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 24);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 24);
+    };
+
     handleScroll();
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
+
+  /*
+    Robust mobile scroll locking, including iOS Safari.
+    The page is fixed in place while the menu is open.
+  */
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    scrollPosition.current = window.scrollY;
+
+    const body = document.body;
+    const html = document.documentElement;
+
+    body.style.position = "fixed";
+    body.style.top = `-${scrollPosition.current}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+
+    html.style.overflow = "hidden";
+
+    return () => {
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+
+      html.style.overflow = "";
+
+      window.scrollTo(0, scrollPosition.current);
+    };
+  }, [mobileOpen]);
+
+  const closeMobileMenu = () => {
+    setMobileOpen(false);
+  };
 
   return (
     <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
       <div className="nav-shell">
-        <Link href="/" className="brand">
+        <Link href="/" className="brand" onClick={closeMobileMenu}>
           <div className="brand-mark">
             <span>M</span>
             <span className="brand-slash">/</span>
@@ -55,17 +102,22 @@ export default function Header() {
             <strong>
               Michael Y. Oh, <span>MD</span>
             </strong>
+
             <small>Spine & Functional Neurosurgery</small>
           </div>
         </Link>
 
-        <nav className="desktop-nav">
+        <nav className="desktop-nav" aria-label="Primary navigation">
           <Link href="/about" className="nav-link">
             About
           </Link>
 
           <div className="nav-dropdown">
-            <button className="nav-link dropdown-trigger">
+            <button
+              type="button"
+              className="nav-link dropdown-trigger"
+              aria-haspopup="true"
+            >
               Conditions
               <span className="chevron" aria-hidden="true" />
             </button>
@@ -74,6 +126,7 @@ export default function Header() {
               <div className="dropdown-inner">
                 <div className="dropdown-heading">
                   <span>Conditions</span>
+
                   <p>Common spine and neurological conditions.</p>
                 </div>
 
@@ -81,7 +134,7 @@ export default function Header() {
                   {conditions.map((item) => (
                     <Link key={item.href} href={item.href}>
                       {item.label}
-                      <span>→</span>
+                      <span aria-hidden="true">→</span>
                     </Link>
                   ))}
                 </div>
@@ -90,7 +143,11 @@ export default function Header() {
           </div>
 
           <div className="nav-dropdown">
-            <button className="nav-link dropdown-trigger">
+            <button
+              type="button"
+              className="nav-link dropdown-trigger"
+              aria-haspopup="true"
+            >
               Expertise
               <span className="chevron" aria-hidden="true" />
             </button>
@@ -99,6 +156,7 @@ export default function Header() {
               <div className="dropdown-inner">
                 <div className="dropdown-heading">
                   <span>Expertise</span>
+
                   <p>
                     Advanced surgical and neuromodulation approaches.
                   </p>
@@ -108,7 +166,7 @@ export default function Header() {
                   {expertise.map((item) => (
                     <Link key={item.href} href={item.href}>
                       {item.label}
-                      <span>→</span>
+                      <span aria-hidden="true">→</span>
                     </Link>
                   ))}
                 </div>
@@ -131,10 +189,12 @@ export default function Header() {
           </Link>
 
           <button
+            type="button"
             className={`menu-button ${mobileOpen ? "open" : ""}`}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
           >
             <span />
             <span />
@@ -142,19 +202,26 @@ export default function Header() {
         </div>
       </div>
 
-      <div className={`mobile-menu ${mobileOpen ? "open" : ""}`}>
-        <div className="mobile-menu-inner">
-          <Link href="/about" onClick={() => setMobileOpen(false)}>
+      <div
+        id="mobile-navigation"
+        className={`mobile-menu ${mobileOpen ? "open" : ""}`}
+      >
+        <nav
+          className="mobile-menu-inner"
+          aria-label="Mobile navigation"
+        >
+          <Link href="/about" onClick={closeMobileMenu}>
             About
           </Link>
 
           <div className="mobile-group">
             <span>Conditions</span>
+
             {conditions.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={closeMobileMenu}
               >
                 {item.label}
               </Link>
@@ -163,25 +230,26 @@ export default function Header() {
 
           <div className="mobile-group">
             <span>Expertise</span>
+
             {expertise.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={closeMobileMenu}
               >
                 {item.label}
               </Link>
             ))}
           </div>
 
-          <Link href="/research" onClick={() => setMobileOpen(false)}>
+          <Link href="/research" onClick={closeMobileMenu}>
             Research & Media
           </Link>
 
-          <Link href="/locations" onClick={() => setMobileOpen(false)}>
+          <Link href="/locations" onClick={closeMobileMenu}>
             Locations
           </Link>
-        </div>
+        </nav>
       </div>
     </header>
   );
