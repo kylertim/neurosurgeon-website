@@ -61,14 +61,37 @@ export default function Header() {
     const body = document.body;
     const html = document.documentElement;
 
-    body.style.position = "fixed";
-    body.style.top = `-${scrollPosition.current}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
+useEffect(() => {
+  if (!mobileOpen) return;
 
-    html.style.overflow = "hidden";
+  const body = document.body;
+
+  body.style.overflow = "hidden";
+
+  const preventBackgroundScroll = (event: TouchEvent) => {
+    const target = event.target as HTMLElement;
+
+    // Allow scrolling inside the actual mobile menu
+    if (target.closest(".mobile-menu")) {
+      return;
+    }
+
+    event.preventDefault();
+  };
+
+  document.addEventListener("touchmove", preventBackgroundScroll, {
+    passive: false,
+  });
+
+  return () => {
+    body.style.overflow = "";
+
+    document.removeEventListener(
+      "touchmove",
+      preventBackgroundScroll
+    );
+  };
+}, [mobileOpen]);
 
     return () => {
       body.style.position = "";
